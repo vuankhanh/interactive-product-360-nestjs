@@ -17,9 +17,8 @@ import { ChangeUploadfilesNamePipe } from 'src/shared/pipe/change-uploadfile-nam
 import { IAlbum, IMedia } from 'src/shared/interface/media.interface';
 import { memoryStorageMulterOptions } from 'src/constant/file.constanst';
 
-@Controller('album')
+@Controller()
 @UseInterceptors(FormatResponseInterceptor)
-// @UseGuards(AuthGuard)
 @UsePipes(ValidationPipe)
 export class AlbumController {
   constructor(
@@ -52,7 +51,7 @@ export class AlbumController {
   }
 
   @Post()
-  @UseGuards(ValidateCreateAlbumGuard)
+  @UseGuards(ValidateCreateAlbumGuard, AuthGuard)
   @UseInterceptors(
     FilesInterceptor('files', null, memoryStorageMulterOptions),
     FilesProccedInterceptor
@@ -78,7 +77,7 @@ export class AlbumController {
   }
 
   @Patch('add-new-files')
-  @UseGuards(ValidateModifyAlbumGuard)
+  @UseGuards(ValidateModifyAlbumGuard, AuthGuard)
   @UseInterceptors(
     FilesInterceptor('files', null, memoryStorageMulterOptions),
     FilesProccedInterceptor
@@ -93,6 +92,7 @@ export class AlbumController {
   }
 
   @Patch('remove-files')
+  @UseGuards(AuthGuard)
   async removeFiles(
     @Query('id', new ParseObjectIdPipe()) id: string,
     @Body(new ValidationPipe({ transform: true }), new ParseObjectIdArrayPipe('filesWillRemove')) body: AlbumModifyRemoveFilesDto,
@@ -103,6 +103,7 @@ export class AlbumController {
   }
 
   @Patch('item-index-change')
+  @UseGuards(AuthGuard)
   async itemIndexChange(
     @Body(new ValidationPipe({ transform: true }), new ParseObjectIdArrayPipe('newItemIndexChange')) body: AlbumModifyItemIndexChangeDto,
   ) {
@@ -111,6 +112,7 @@ export class AlbumController {
   }
 
   @Delete(':id')
+  @UseGuards(AuthGuard)
   async remove(
     @Param('id', new ParseObjectIdPipe()) id: string,
   ) {
