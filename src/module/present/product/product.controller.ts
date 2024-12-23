@@ -30,9 +30,9 @@ export class ProductController {
 
   @Get('detail')
   async getDetail(
-    @Param('route') route: string,
+    @Query('route') route: string
   ) {
-    const filterQuery = { route };
+    const filterQuery = { name: route };
     
     return await this.productService.getDetail(filterQuery);
   }
