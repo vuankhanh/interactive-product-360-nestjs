@@ -1,3 +1,4 @@
+import { url } from "inspector";
 import { join } from "path";
 
 export default () => {
@@ -9,6 +10,9 @@ export default () => {
       host: process.env.DEV_DB_HOST || 'localhost',
       port: Number(process.env.DEV_DB_PORT) || 27017,
       name: process.env.DEV_DB_NAME || 'kumquat_bep4than_dev'
+    },
+    converterService: {
+      url: process.env.DEV_CONVERTER_SERVICE_URL || 'http://localhost:3009'
     }
   };
 
@@ -20,6 +24,9 @@ export default () => {
       host: process.env.PRO_DB_HOST,
       port: Number(process.env.PRO_DB_PORT),
       name: process.env.PRO_DB_NAME
+    },
+    converterService: {
+      url: process.env.PRO_CONVERTER_SERVICE_URL || 'http://10.8.0.2:3009'
     }
   };
 

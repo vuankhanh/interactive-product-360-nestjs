@@ -3,7 +3,7 @@ import { Injectable } from "@nestjs/common";
 import * as sharp from 'sharp';
 
 @Injectable()
-export class ImageConverterUtil {
+export class ImageConverterUtil1 {
   constructor() { }
 
   static async resize(file: Express.Multer.File): Promise<Buffer> {

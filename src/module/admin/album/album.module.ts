@@ -9,6 +9,8 @@ import { AuthGuard } from 'src/shared/guard/auth.guard';
 import { ChangeUploadfilesNamePipe } from 'src/shared/pipe/change-uploadfile-name.pipe';
 import { FilesProcessPipe } from 'src/shared/pipe/file_process.pipe';
 import { DiskStoragePipe } from 'src/shared/pipe/disk-storage.pipe';
+import { MediaProcessUtil } from 'src/shared/util/media_process.util';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
   imports: [
@@ -18,7 +20,8 @@ import { DiskStoragePipe } from 'src/shared/pipe/disk-storage.pipe';
         schema: albumSchema,
         collection: Album.name.toLowerCase()
       }
-    ])
+    ]),
+    HttpModule
   ],
   controllers: [AlbumController],
   providers: [
@@ -29,7 +32,9 @@ import { DiskStoragePipe } from 'src/shared/pipe/disk-storage.pipe';
 
     ChangeUploadfilesNamePipe,
     FilesProcessPipe,
-    DiskStoragePipe
+    DiskStoragePipe,
+
+    MediaProcessUtil,
   ],
   exports: [AlbumService]
 })

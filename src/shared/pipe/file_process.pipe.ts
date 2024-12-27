@@ -9,10 +9,12 @@ import { CustomInternalServerErrorException } from '../exception/custom-exceptio
   scope: Scope.REQUEST,
 })
 export class FileProcessPipe implements PipeTransform {
-  constructor() {}
+  constructor(
+    private readonly mediaProcessUtil: MediaProcessUtil,
+  ) {}
   async transform(file: Express.Multer.File): Promise<TProcessedMedia> {
     try {
-      return file.mimetype.includes('image') ? await MediaProcessUtil.processImage(file) : await MediaProcessUtil.originalVideo(file);
+      return this.mediaProcessUtil.processImage(file);
     } catch (error) {
       throw new CustomInternalServerErrorException(error.message || error);
     }
@@ -21,12 +23,14 @@ export class FileProcessPipe implements PipeTransform {
 
 @Injectable()
 export class FilesProcessPipe implements PipeTransform {
-  constructor() {}
+  constructor(
+    private readonly mediaProcessUtil: MediaProcessUtil,
+  ) {}
   async transform(files: Express.Multer.File[]): Promise<Array<TProcessedMedia>> {
     try {
       return await Promise.all(
         files.map(async file=>{
-          return file.mimetype.includes('image') ? await MediaProcessUtil.processImage(file) : await MediaProcessUtil.originalVideo(file);
+          return this.mediaProcessUtil.processImage(file);
         })
       )
     } catch (error) {

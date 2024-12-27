@@ -1,25 +1,30 @@
 import { Injectable } from "@nestjs/common";
-import { ImageConverterUtil } from "./image_converter.util";
-import { VideoConverterUtil } from "./video_converter.util";
 import * as path from 'path';
+import { HttpService } from '@nestjs/axios';
+import { lastValueFrom } from 'rxjs';
 import { imageTypes } from "src/constant/file.constanst";
 import { TProcessedMedia } from "../interface/files.interface";
+import { ConfigService } from "@nestjs/config";
 
 @Injectable()
 export class MediaProcessUtil {
-  static async processImage(file: Express.Multer.File): Promise<TProcessedMedia> {
-    const bufferFile = await ImageConverterUtil.resize(file);
+  constructor(
+    private readonly httpService: HttpService,
+    private configService: ConfigService
+  ) {}
+
+  async processImage(file: Express.Multer.File): Promise<TProcessedMedia> {
     const newFile: Express.Multer.File = {
       ...file,
       originalname: [path.parse(file.originalname).name, imageTypes.webp.extension].join('.'),
-      buffer: bufferFile,
+      buffer: await this.callExternalService(file.buffer, 'resize'),
       mimetype: imageTypes.webp.type,
     };
   
     const newThumbnailFile: Express.Multer.File = {
       ...file,
       originalname: [path.parse(file.originalname).name+'-thumbnail', imageTypes.webp.extension].join('.'),
-      buffer: await ImageConverterUtil.thumbnail(bufferFile, 250),
+      buffer: await this.callExternalService(file.buffer, 'thumbnail'),
       mimetype: imageTypes.webp.type,
     };
 
@@ -30,43 +35,22 @@ export class MediaProcessUtil {
 
     return processedMedia;
   }
-  
-  static async originalVideo(file: Express.Multer.File): Promise<TProcessedMedia> {
-    const newThumbnailFile: Express.Multer.File = {
-      ...file,
-      originalname: [path.parse(file.originalname).name+'-thumbnail', imageTypes.webp.extension].join('.'),
-      buffer: await VideoConverterUtil.generateThumbnail(file.buffer),
-      mimetype: imageTypes.webp.type,
-    };
-  
-    const processedMedia: TProcessedMedia = {
-      file,
-      thumbnail: newThumbnailFile
+
+  private async callExternalService(buffer: Buffer, action: string): Promise<Buffer> {
+    const converterServiceUrl = this.configService.get<string>('converterService.url');
+    const formData = new FormData();
+    const blob = new Blob([buffer], { type: 'application/octet-stream' });
+    formData.append('image', blob);
+    try {
+      const response = await lastValueFrom(
+        this.httpService.post(`${converterServiceUrl}/${action}`, formData, {
+          responseType: 'arraybuffer',
+          headers: { 'Content-Type': 'multipart/form-data' },
+        })
+      );
+      return Buffer.from(response.data);
+    } catch (error) {
+      throw new Error(error.message || error);
     }
-    return processedMedia
   }
-  
-  // Uncomment if you want to convert video to webm
-  // static async processVideo(file: Express.Multer.File): Promise<TProcessedMedia> {
-  //   const bufferFile = await VideoConverterUtil.convert(file);
-  //   const newFile: Express.Multer.File = {
-  //     ...file,
-  //     originalname: [path.parse(file.originalname).name, videoTypes.webm.extension].join('.'),
-  //     buffer: bufferFile,
-  //     mimetype: videoTypes.webm.type,
-  //   };
-    
-  //   const newThumbnailFile: Express.Multer.File = {
-  //     ...file,
-  //     originalname: [path.parse(file.originalname).name+'-thumbnail', imageTypes.webp.extension].join('.'),
-  //     buffer: await VideoConverterUtil.generateThumbnail(bufferFile),
-  //     mimetype: imageTypes.webp.type,
-  //   };
-  
-  //   const processedMedia: TProcessedMedia = {
-  //     file: newFile,
-  //     thumbnail: newThumbnailFile
-  //   }
-  //   return processedMedia
-  // }
 }
