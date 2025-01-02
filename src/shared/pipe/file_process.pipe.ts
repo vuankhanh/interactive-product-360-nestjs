@@ -14,7 +14,7 @@ export class FileProcessPipe implements PipeTransform {
   ) {}
   async transform(file: Express.Multer.File): Promise<TProcessedMedia> {
     try {
-      return this.mediaProcessUtil.processImage(file);
+      return await this.mediaProcessUtil.processImage(file);
     } catch (error) {
       throw new CustomInternalServerErrorException(error.message || error);
     }
@@ -28,12 +28,15 @@ export class FilesProcessPipe implements PipeTransform {
   ) {}
   async transform(files: Express.Multer.File[]): Promise<Array<TProcessedMedia>> {
     try {
-      return await Promise.all(
+      const promiseAll = await Promise.all(
         files.map(async file=>{
           return this.mediaProcessUtil.processImage(file);
         })
       )
+      return promiseAll;
+      
     } catch (error) {
+      console.log(error);
       throw new CustomInternalServerErrorException(error.message || error);
     }
   }

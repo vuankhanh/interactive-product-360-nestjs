@@ -81,6 +81,7 @@ export class AuthController {
   }
 
   @Post('config')
+  @HttpCode(HttpStatus.OK)
   @UseGuards(AuthGuard)
   config() {
     const config = {

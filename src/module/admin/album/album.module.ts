@@ -11,6 +11,7 @@ import { FilesProcessPipe } from 'src/shared/pipe/file_process.pipe';
 import { DiskStoragePipe } from 'src/shared/pipe/disk-storage.pipe';
 import { MediaProcessUtil } from 'src/shared/util/media_process.util';
 import { HttpModule } from '@nestjs/axios';
+import { CallExternalService } from 'src/shared/service/call-external.service';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { HttpModule } from '@nestjs/axios';
     DiskStoragePipe,
 
     MediaProcessUtil,
+    CallExternalService
   ],
   exports: [AlbumService]
 })

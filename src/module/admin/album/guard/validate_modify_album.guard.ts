@@ -15,12 +15,12 @@ export class ValidateModifyAlbumGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
 
     const query = request.query;
-    const id = query.id;
-    if(!id) {
+    const route = query.route;
+    if(!route) {
       return false;
     }
 
-    const filterQuery = { _id: ObjectId.createFromHexString(id) };
+    const filterQuery = { route };
     const album = await this.albumService.getDetail(filterQuery);
     
     if (!album) {

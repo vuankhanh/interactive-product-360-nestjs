@@ -1,9 +1,9 @@
 import * as fs from 'fs';
 
 export class FileUtil {
-  static async read(filePath: string, encoding: BufferEncoding = 'utf8'): Promise<string> {
+  static async read(filePath: string): Promise<Buffer> {
     return new Promise((resolve, reject) => {
-      fs.readFile(filePath, { encoding }, (err, data) => {
+      fs.readFile(filePath, null, (err, data) => {
         if (err) {
           reject(err);
         } else {

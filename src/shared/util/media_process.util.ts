@@ -1,30 +1,30 @@
 import { Injectable } from "@nestjs/common";
 import * as path from 'path';
-import { HttpService } from '@nestjs/axios';
-import { lastValueFrom } from 'rxjs';
 import { imageTypes } from "src/constant/file.constanst";
 import { TProcessedMedia } from "../interface/files.interface";
-import { ConfigService } from "@nestjs/config";
+import { CallExternalService } from "../service/call-external.service";
 
 @Injectable()
 export class MediaProcessUtil {
   constructor(
-    private readonly httpService: HttpService,
-    private configService: ConfigService
-  ) {}
-
+    private readonly callExternalService: CallExternalService
+  ) { }
   async processImage(file: Express.Multer.File): Promise<TProcessedMedia> {
+    let newFileBuffer: Buffer<ArrayBufferLike> = await this.callExternalService.callConverterService(file.buffer, 'resize');
+
     const newFile: Express.Multer.File = {
       ...file,
       originalname: [path.parse(file.originalname).name, imageTypes.webp.extension].join('.'),
-      buffer: await this.callExternalService(file.buffer, 'resize'),
+      buffer: newFileBuffer,
       mimetype: imageTypes.webp.type,
     };
-  
+
+    let newThumbnailFileBuffer: Buffer<ArrayBufferLike> = await this.callExternalService.callConverterService(file.buffer, 'thumbnail');
+
     const newThumbnailFile: Express.Multer.File = {
       ...file,
-      originalname: [path.parse(file.originalname).name+'-thumbnail', imageTypes.webp.extension].join('.'),
-      buffer: await this.callExternalService(file.buffer, 'thumbnail'),
+      originalname: [path.parse(file.originalname).name + '-thumbnail', imageTypes.webp.extension].join('.'),
+      buffer: newThumbnailFileBuffer,
       mimetype: imageTypes.webp.type,
     };
 
@@ -34,23 +34,5 @@ export class MediaProcessUtil {
     };
 
     return processedMedia;
-  }
-
-  private async callExternalService(buffer: Buffer, action: string): Promise<Buffer> {
-    const converterServiceUrl = this.configService.get<string>('converterService.url');
-    const formData = new FormData();
-    const blob = new Blob([buffer], { type: 'application/octet-stream' });
-    formData.append('image', blob);
-    try {
-      const response = await lastValueFrom(
-        this.httpService.post(`${converterServiceUrl}/${action}`, formData, {
-          responseType: 'arraybuffer',
-          headers: { 'Content-Type': 'multipart/form-data' },
-        })
-      );
-      return Buffer.from(response.data);
-    } catch (error) {
-      throw new Error(error.message || error);
-    }
   }
 }

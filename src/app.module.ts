@@ -30,7 +30,7 @@ import { PresentModule } from './module/present/present.module';
     {
       provide: APP_FILTER,
       useClass: HttpExceptionFilter,
-    },
+    }
   ],
 })
 export class AppModule {

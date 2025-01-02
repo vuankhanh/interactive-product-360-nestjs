@@ -71,6 +71,10 @@ export class AlbumService implements IBasicService<Album> {
     return album;
   }
 
+  async getGift(filterQuery: FilterQuery<Album>) {
+    
+  }
+
   async replace(filterQuery: FilterQuery<Album>, data: Album) {
     const milestone = await this.albumModel.findOneAndUpdate(filterQuery, data, { new: true });
     return milestone;

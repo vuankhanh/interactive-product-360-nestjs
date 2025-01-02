@@ -1,4 +1,4 @@
-import { Body, Controller, DefaultValuePipe, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, Req, UploadedFiles, UseGuards, UseInterceptors, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, DefaultValuePipe, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post, Query, Req, Res, UploadedFiles, UseGuards, UseInterceptors, UsePipes, ValidationPipe } from '@nestjs/common';
 import { AlbumService } from './album.service';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { ValidateCreateAlbumGuard } from './guard/validate_create_album.guard';
@@ -16,13 +16,19 @@ import { DiskStoragePipe } from 'src/shared/pipe/disk-storage.pipe';
 import { ChangeUploadfilesNamePipe } from 'src/shared/pipe/change-uploadfile-name.pipe';
 import { IAlbum, IMedia } from 'src/shared/interface/media.interface';
 import { memoryStorageMulterOptions } from 'src/constant/file.constanst';
+import { CallExternalService } from 'src/shared/service/call-external.service';
+import { ConfigService } from '@nestjs/config';
+import { ObjectProcessUtil } from 'src/shared/util/object-process.util';
+import { CustomInternalServerErrorException } from 'src/shared/exception/custom-exception';
 
 @Controller()
 @UseInterceptors(FormatResponseInterceptor)
 @UsePipes(ValidationPipe)
 export class AlbumController {
   constructor(
-    private readonly albumService: AlbumService
+    private readonly configService: ConfigService,
+    private readonly albumService: AlbumService,
+    private readonly callExternalService: CallExternalService
   ) { }
 
   @Get()
@@ -76,6 +82,30 @@ export class AlbumController {
     return createdAlbum;
   }
 
+  @Post('get-gif/:id')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(AuthGuard)
+
+  async getGif(
+    @Param('id', new ParseObjectIdPipe()) id: string
+  ) {
+    const queryFilter = { _id: id };
+
+    try {
+      const album = await this.albumService.getDetail(queryFilter);
+      //
+      const albumFolder = this.configService.get<string>('folder.album');
+      
+      const urls = ObjectProcessUtil.albumDataToListUrl(albumFolder, album);
+      const buffers = await ObjectProcessUtil.urlsToBuffers(urls);
+  
+      const gifBuffer = await this.callExternalService.callGetGifService(buffers);
+      return gifBuffer;
+    } catch (error) {
+      throw new CustomInternalServerErrorException(error.message || error);
+    }
+  }
+
   @Patch('add-new-files')
   @UseGuards(ValidateModifyAlbumGuard, AuthGuard)
   @UseInterceptors(
@@ -83,10 +113,12 @@ export class AlbumController {
     FilesProccedInterceptor
   )
   async addNewFiles(
-    @Query('id', new ParseObjectIdPipe()) id: string,
+    @Query('route') route: string,
     @UploadedFiles(ChangeUploadfilesNamePipe, FilesProcessPipe, DiskStoragePipe) medias: Array<IMedia>
   ) {
-    const queryFilter = { _id: id };
+    console.log('route', route);
+    
+    const queryFilter = { route };
     const updatedAlbums = await this.albumService.addNewFiles(queryFilter, medias);
     return updatedAlbums;
   }
@@ -94,10 +126,10 @@ export class AlbumController {
   @Patch('remove-files')
   @UseGuards(AuthGuard)
   async removeFiles(
-    @Query('id', new ParseObjectIdPipe()) id: string,
+    @Query('route') route: string,
     @Body(new ValidationPipe({ transform: true }), new ParseObjectIdArrayPipe('filesWillRemove')) body: AlbumModifyRemoveFilesDto,
   ) {
-    const queryFilter = { _id: id };
+    const queryFilter = { route };
     const updatedAlbums = await this.albumService.removeFiles(queryFilter, body.filesWillRemove);
     return updatedAlbums;
   }
