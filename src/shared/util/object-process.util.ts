@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { Album } from "src/module/admin/album/schema/album.schema";
 import { FileUtil } from "./file.util";
+import * as path from 'path';
 
 @Injectable()
 export class ObjectProcessUtil {
@@ -8,10 +9,19 @@ export class ObjectProcessUtil {
     return albumData.media.map(media => `${rootUrl}/${media.url}`);
   }
 
-  static async urlsToBuffers(urls: string[]): Promise<Buffer<ArrayBufferLike>[]>{
-    const buffers: Buffer<ArrayBufferLike>[] = [];
+  static async urlsToBuffers(urls: string[]): Promise<{
+    buffer: Buffer<ArrayBufferLike>,
+    originalname: string
+  }[]>{
+    const buffers: {
+      buffer: Buffer<ArrayBufferLike>,
+      originalname: string
+    }[] = [];
+    
     for(let url of urls){
-      buffers.push(await FileUtil.read(url));
+      const buffer = await FileUtil.read(url);
+      const originalname = path.basename(url); // Lấy tên file từ URL
+      buffers.push({ buffer, originalname });
     }
     return buffers;
   }

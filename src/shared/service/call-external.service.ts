@@ -28,13 +28,16 @@ export class CallExternalService {
     }
   }
 
-  async callGetGifService(buffers: Buffer[]): Promise<Buffer> {
+  async callGetGifService(files: {
+    buffer: Buffer<ArrayBufferLike>,
+    originalname: string
+  }[]): Promise<Buffer> {
     const converterServiceUrl = this.configService.get<string>('converterService.url');
     const formData = new FormData();
 
-    for(let buffer of buffers){
-      const blob = new Blob([buffer], { type: 'application/octet-stream' });
-      formData.append('images', blob);
+    for(let file of files){
+      const blob = new Blob([file.buffer], { type: 'application/octet-stream' });
+      formData.append('images', blob, file.originalname);
     }
 
     try {
